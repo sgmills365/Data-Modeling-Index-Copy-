@@ -1,6 +1,10 @@
-==========================
-Data Modeling Introduction
-==========================
+.. index:: index; multikey
+.. _index-type-multi-key:
+.. _index-type-multikey:
+
+================
+Multikey Indexes
+================
 
 .. default-domain:: mongodb
 
@@ -10,102 +14,230 @@ Data Modeling Introduction
    :depth: 1
    :class: singlecol
 
-Data in MongoDB has a *flexible schema*. Unlike SQL databases, where
-you must determine and declare a table's schema before inserting data,
-MongoDB's :term:`collections <collection>` do not enforce
-:term:`document` structure. This flexibility facilitates the mapping of
-documents to an entity or an object. Each document can match the data
-fields of the represented entity, even if the data has substantial
-variations. In practice, however, the documents in a collection share a
-similar structure.
+For indexing a field that holds an array value, MongoDB creates an index
+key for each element in the array. These *multikey* indexes support
+efficient queries against array fields. Multikey indexes can be
+constructed over arrays that hold both scalar values (e.g. strings,
+numbers) *and* nested documents.
 
-The key challenge in data modeling is balancing the needs of the
-application, the performance characteristics of the database engine, and
-the data retrieval patterns. When designing data models, always
-consider the application usage of the data (i.e. queries, updates, and
-processing of the data) as well as the inherent structure of the actual data.
+.. include:: /images/index-multikey.rst
 
-###**Document Structure**
-------------------
+Create Multikey Index
+---------------------
 
-.. start-primer-excerpt
+To create a multikey index, use the
+:method:`db.collection.createIndex()` method:
 
-The key decision in designing data models for MongoDB applications
-revolves around the structure of documents and how the application
-represents the relationships between data. There are two tools that allow
-applications to represent these relationships: *references* and
-*embedded documents*.
+.. code-block:: javascript
 
-###**Database References**
-~~~~~~~~~~~~~~~~~~~~~
+   db.coll.createIndex( { <field>: < 1 or -1 > } )
 
-Database References store the relationships between data by including
-links or *references* from one document to another. Applications can
-resolve these :doc:`references </reference/database-references>` to
-access the related data. Broadly, these are *normalized* data models,
-as seen in the example below.
+MongoDB automatically creates a multikey index if any indexed field is
+an array; you do not need to necessarily  specify the multikey type.
 
-. include:: /images/data-model-normalized.rst
+Index Bounds
+------------
 
-> See :ref: `data-modeling-referencing` for the strengths and weaknesses of using references. 
+If an index is multikey, then computation of the index bounds follows
+special rules. For details on multikey index bounds, see
+:doc:`/core/multikey-index-bounds`.
 
-###**Embedded Data**
-~~~~~~~~~~~~~
+Limitations
+-----------
 
-Embedded documents capture relationships between data by storing
-related data in a single document structure. MongoDB documents make it
-possible to embed document structures in a field or
-array within a document. These *denormalized* data models allow
-applications to retrieve and manipulate related data in a single
-database operation.
+Compound Multikey Indexes
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. include:: /images/data-model-denormalized.rst
+For a :ref:`compound <index-type-compound>` multikey index, each
+indexed document can have *at most* one indexed field whose value is an
+array. As such, you cannot create a compound multikey index if more than one
+to-be-indexed field of a document is an array. Or, if a compound
+multikey index already exists, you cannot insert a document that would
+violate this restriction.
 
-> See :ref:`data-modeling-embedding` for the strengths and weaknesses of
-embedding documents.
+For example, consider a collection that contains the following document:
 
-.. end-primer-excerpt
+.. code-block:: javascript
 
-Atomicity of Write Operations
------------------------------
+   { _id: 1, a: [ 1, 2 ], b: [ 1, 2 ], category: "AB - both arrays" }
 
-In MongoDB, write operations are atomic at the :term:`document` level,
-and no single write operation can atomically affect more than one
-document or more than one collection. A denormalized data model with
-embedded data combines all related data for a represented entity in a
-single document. This facilitates atomic write operations since a
-single write operation can insert or update the data for an entity.
-Normalizing the data would split the data across multiple collections
-and would require multiple write operations that are not correctively 
-atomic.
+You cannot create a compound multikey index ``{ a: 1, b: 1 }`` on the
+collection since both the ``a`` and ``b`` fields are arrays.
 
-However, schemas that facilitate atomic writes may limit ways that
-applications can use the data or may limit ways to modify applications.
-The :ref:`Atomicity Considerations <data-model-atomicity>`
-documentation describes the challenge of designing a schema that
-balances flexibility and atomicity.
+But consider a collection that contains the following documents:
 
-Document Growth
----------------
+.. code-block:: javascript
 
-Some updates, such as pushing elements to an array or adding new
-fields, increase a :term:`document's <document>` size. 
+   { _id: 1, a: [1, 2], b: 1, category: "A array" }
+   { _id: 2, a: 1, b: [1, 2], category: "B array" }
 
-For the MMAPv1 storage engine, if the document size exceeds the
-allocated space for that document, MongoDB relocates the document on
-disk. When using the MMAPv1 storage engine, growth consideration can
-affect the decision to normalize or denormalize data. See
-:ref:`Document Growth Considerations <data-model-document-growth>` for
-more about planning for and managing document growth forMMAPv1.
+A compound multikey index ``{ a: 1, b: 1 }`` is permissible since for
+each document, only one field indexed by the compound multikey index is
+an array; i.e. no document contains array values for both ``a`` and
+``b`` fields. After creating the compound multikey index, if you
+attempt to insert a document where both ``a`` and ``b`` fields are
+arrays, MongoDB will fail the insert.
 
-Data Use and Performance
-------------------------
+Shard Keys
+~~~~~~~~~~
 
-When designing a data model, consider how applications will use your
-database. For instance, if your application only uses recently
-inserted documents, consider using :doc:`/core/capped-collections`. Or
-if your application needs are mainly read operations to a collection,
-adding indexes to support common queries can improve performance.
+You **cannot** specify a multikey index as the shard key index.
 
-> See :doc: `/core/data-model-operations` for more information on these
-and other operational considerations that affect data model designs.
+.. versionchanged:: 2.6
+
+   However, if the shard key index is a :ref:`prefix
+   <compound-index-prefix>` of a compound index, the compound index is
+   allowed to become a compound *multikey* index if one of the other
+   keys (i.e. keys that are not part of the shard key) indexes an
+   array. Compound multikey indexes can have an impact on performance.
+
+Hashed Indexes and Covered Queries
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:doc:`Hashed </core/index-hashed>` indexes **cannot** be multikey. 
+As well,.. include:: /includes/fact-multikey-index-covered-query.rst
+
+
+Query on the Array Field as a Whole
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When a query filter specifies an :ref:`exact match for an array as a
+whole <array-match-exact>`, MongoDB can use the multikey index to look
+up the first element of the query array but cannot use the multikey
+index scan to find the whole array. Instead, after using the multikey
+index to look up the first element of the query array, MongoDB
+retrieves the associated documents and filters for documents whose
+array matches the array in the query.
+
+For example, consider an ``inventory`` collection that contains the
+following documents:
+
+.. code-block:: javascript
+
+   { _id: 5, type: "food", item: "aaa", ratings: [ 5, 8, 9 ] }
+   { _id: 6, type: "food", item: "bbb", ratings: [ 5, 9 ] }
+   { _id: 7, type: "food", item: "ccc", ratings: [ 9, 5, 8 ] }
+   { _id: 8, type: "food", item: "ddd", ratings: [ 9, 5 ] }
+   { _id: 9, type: "food", item: "eee", ratings: [ 5, 9, 5 ] }
+
+The collection has a multikey index on the ``ratings`` field:
+
+.. code-block:: javascript
+
+   db.inventory.createIndex( { ratings: 1 } )
+
+The following query looks for documents where the ``ratings`` field is
+the array ``[ 5, 9 ]``:
+
+.. code-block:: javascript
+
+   db.inventory.find( { ratings: [ 5, 9 ] } )
+
+MongoDB can use the multikey index to find documents that have ``5`` at
+any position in the ``ratings`` array. Then, MongoDB retrieves these
+documents and filters for documents whose ``ratings`` array equals the
+query array ``[ 5, 9 ]``.
+
+Examples
+--------
+
+Index Basic Arrays
+~~~~~~~~~~~~~~~~~~
+
+Consider a ``survey`` collection with the following document:
+
+.. code-block:: javascript
+
+   { _id: 1, item: "ABC", ratings: [ 2, 5, 9 ] }
+
+Create an index on the field ``ratings``:
+
+.. code-block:: javascript
+
+   db.survey.createIndex( { ratings: 1 } )
+
+Since the ``ratings`` field contains an array, the index on ``ratings``
+is multikey. The multikey index contains the following three index
+keys, each pointing to the same document:
+ ``2``, ``5``, and ``9``.
+
+Index Arrays with Embedded Documents
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can create multikey indexes on array fields that contain nested
+objects.
+
+Consider an ``inventory`` collection with documents of the following
+form:
+
+.. code-block:: javascript
+
+   {
+     _id: 1,
+     item: "abc",
+     stock: [
+       { size: "S", color: "red", quantity: 25 },
+       { size: "S", color: "blue", quantity: 10 },
+       { size: "M", color: "blue", quantity: 50 }
+     ]
+   }
+   {
+     _id: 2,
+     item: "def",
+     stock: [
+       { size: "S", color: "blue", quantity: 20 },
+       { size: "M", color: "blue", quantity: 5 },
+       { size: "M", color: "black", quantity: 10 },
+       { size: "L", color: "red", quantity: 2 }
+     ]
+   }
+   {
+     _id: 3,
+     item: "ijk",
+     stock: [
+       { size: "M", color: "blue", quantity: 15 },
+       { size: "L", color: "blue", quantity: 100 },
+       { size: "L", color: "red", quantity: 25 }
+     ]
+   }
+
+   ...
+
+The following operation creates a multikey index on the ``stock.size``
+and ``stock.quantity`` fields:
+
+.. code-block:: javascript
+
+   db.inventory.createIndex( { "stock.size": 1, "stock.quantity": 1 } )
+
+The compound multikey index can support queries with predicates that
+include both indexed fields as well as predicates that include only the
+index prefix ``"stock.size"``, as in the following examples:
+
+.. code-block:: javascript
+
+   db.inventory.find( { "stock.size": "M" } )
+   db.inventory.find( { "stock.size": "S", "stock.quantity": { $gt: 20 } } )
+
+For details on how MongoDB can combine multikey index bounds, see
+:doc:`/core/multikey-index-bounds`. For more information on behavior of
+compound indexes and prefixes, see :ref:`compound indexes and prefixes
+<compound-index-prefix>`.
+
+The compound multikey index can also support sort operations, such as
+the following examples:
+
+.. code-block:: javascript
+
+   db.inventory.find( ).sort( { "stock.size": 1, "stock.quantity": 1 } )
+   db.inventory.find( { "stock.size": "M" } ).sort( { "stock.quantity": 1 } )
+
+> For more information on behavior of compound indexes and sort
+operations, see :doc:`/tutorial/sort-results-with-indexes`.
+
+.. class:: hidden
+
+   .. toctree::
+      :titlesonly:
+
+      /core/multikey-index-bounds
