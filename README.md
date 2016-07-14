@@ -45,7 +45,7 @@ resolve these :doc:`references </reference/database-references>` to
 access the related data. Broadly, these are *normalized* data models,
 as seen in the example below.
 
-.. include:: /images/data-model-normalized.rst
+. include:: /images/data-model-normalized.rst
 
 > See :ref: `data-modeling-referencing` for the strengths and weaknesses of using references. 
 
