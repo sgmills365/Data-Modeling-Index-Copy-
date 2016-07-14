@@ -25,7 +25,7 @@ the data retrieval patterns. When designing data models, always
 consider the application usage of the data (i.e. queries, updates, and
 processing of the data) as well as the inherent structure of the actual data.
 
-Document Structure
+###**Document Structure**
 ------------------
 
 .. start-primer-excerpt
@@ -36,7 +36,7 @@ represents the relationships between data. There are two tools that allow
 applications to represent these relationships: *references* and
 *embedded documents*.
 
-Database References
+###**Database References**
 ~~~~~~~~~~~~~~~~~~~~~
 
 Database References store the relationships between data by including
@@ -47,10 +47,9 @@ as seen in the example below.
 
 .. include:: /images/data-model-normalized.rst
 
-```See :ref:`data-modeling-referencing` for the strengths and weaknesses of
-using references.```
+> See :ref: "data-modeling-referencing" for the strengths and weaknesses of using references. 
 
-Embedded Data
+###**Embedded Data**
 ~~~~~~~~~~~~~
 
 Embedded documents capture relationships between data by storing
@@ -62,8 +61,8 @@ database operation.
 
 .. include:: /images/data-model-denormalized.rst
 
-```See :ref:`data-modeling-embedding` for the strengths and weaknesses of
-embedding documents.```
+> See :ref:`data-modeling-embedding` for the strengths and weaknesses of
+embedding documents.
 
 .. end-primer-excerpt
 
@@ -108,5 +107,5 @@ inserted documents, consider using :doc:`/core/capped-collections`. Or
 if your application needs are mainly read operations to a collection,
 adding indexes to support common queries can improve performance.
 
-```See :doc:`/core/data-model-operations` for more information on these
-and other operational considerations that affect data model designs.``` 
+> See :doc: '/core/data-model-operations' for more information on these
+and other operational considerations that affect data model designs.
