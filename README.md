@@ -94,8 +94,8 @@ You **cannot** specify a multikey index as the shard key index.
 Hashed Indexes and Covered Queries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:doc:`Hashed </core/index-hashed>` indexes **cannot** be multikey. 
-As well,.. include:: /includes/fact-multikey-index-covered-query.rst
+`Hashed </core/index-hashed>` indexes **cannot** be multikey. 
+As well, multikey indexes cannot support a covered query. 
 
 
 Query on the Array Field as a Whole
