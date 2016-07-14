@@ -37,7 +37,7 @@ applications to represent these relationships: *references* and
 *embedded documents*.
 
 Database References
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 Database References store the relationships between data by including
 links or *references* from one document to another. Applications can
