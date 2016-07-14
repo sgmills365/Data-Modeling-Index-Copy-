@@ -47,7 +47,7 @@ as seen in the example below.
 
 .. include:: /images/data-model-normalized.rst
 
-> See :ref: "data-modeling-referencing" for the strengths and weaknesses of using references. 
+> See :ref: `data-modeling-referencing` for the strengths and weaknesses of using references. 
 
 ###**Embedded Data**
 ~~~~~~~~~~~~~
@@ -107,5 +107,5 @@ inserted documents, consider using :doc:`/core/capped-collections`. Or
 if your application needs are mainly read operations to a collection,
 adding indexes to support common queries can improve performance.
 
-> See :doc: '/core/data-model-operations' for more information on these
+> See :doc: `/core/data-model-operations` for more information on these
 and other operational considerations that affect data model designs.
