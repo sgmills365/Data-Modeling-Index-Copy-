@@ -1,3 +1,126 @@
+## Attribute, Class, and Style Bindings
+  The template syntax provides specialized one-way bindings for scenarios less well suited to property binding.
+
+  ### Attribute Binding
+  We can set the value of an attribute directly with an **attribute binding**.
+.l-sub-section
+  :marked
+    This is the only exception to the rule that a binding sets a target property. This is the only binding that creates and sets an attribute.
+
+:marked
+  We have stressed throughout this chapter that setting an element property with a property binding is always preferred to setting the attribute with a string. So then why does Angular offer attribute binding?
+
+  **We must use attribute binding when there is no element property to bind.**
+
+  Consider the [ARIA](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA),
+  [SVG](https://developer.mozilla.org/en-US/docs/Web/SVG), and
+  table span attributes. They are pure attributes.
+  They do not correspond to element properties or set element properties since there are no property targets to bind to.
+
+  We become painfully aware of this fact when we try to write something like this:
+code-example(language="html").
+  &lt;tr>&lt;td colspan="{{1 + 1}}">Three-Four&lt;/td>&lt;/tr>
+:marked
+  And then we get this error:
+code-example(format="nocode").
+  Template parse errors:
+  Can't bind to 'colspan' since it isn't a known native property
+:marked
+  As the message says, the `<td>` element does not have a `colspan` property.
+  It has the "colspan" *attribute*, but
+  interpolation and property binding can set only *properties*, not attributes.
+
+  We need attribute bindings to create and bind to such attributes.
+
+  Attribute binding syntax resembles property binding.
+  Instead of an element property between brackets, we start with the prefix **`attr`**,
+  followed by a dot (`.`) and the name of the attribute. We then set the attribute
+  value, using an expression that resolves to a string.
+
+  Here we bind `[attr.colspan]` to a calculated value:
++makeExample('template-syntax/ts/app/app.component.html', 'attrib-binding-colspan')(format=".")
+:marked
+  Here's how the table renders:
+  <table border="1px">
+    <tr><td colspan="2">One-Two</td></tr>
+    <tr><td>Five</td><td>Six</td></tr>
+   </table>
+
+  One of the primary use cases for attribute binding
+  is to set ARIA attributes, as in this example:
++makeExample('template-syntax/ts/app/app.component.html', 'attrib-binding-aria')(format=".")
+:marked
+  ### Class Binding
+
+  We can add and remove CSS class names from an element’s `class` attribute with
+  a **class binding**.
+
+  Class binding syntax resembles property binding.
+  Instead of an element property between brackets, we start with the prefix `class`,
+  optionally followed by a dot (`.`) and the name of a CSS class: `[class.class-name]`.
+
+  The following examples show how to add and remove the application's "special" class
+  with class bindings.  Here's how we set the attribute without binding:
++makeExample('template-syntax/ts/app/app.component.html', 'class-binding-1')(format=".")
+:marked
+  We can replace that by binding to a string of the desired class names; this is an all-or-nothing, replacement binding.
++makeExample('template-syntax/ts/app/app.component.html', 'class-binding-2')(format=".")
+
+block dart-class-binding-bug
+  //- N/A
+:marked
+  Finally, we can bind to a specific class name.
+  Angular adds the class when the template expression evaluates to #{_truthy}.
+  It removes the class when the expression is #{_falsey}.
++makeExample('template-syntax/ts/app/app.component.html', 'class-binding-3')(format=".")
+
+.l-sub-section
+  :marked
+    While this is a fine way to toggle a single class name,
+    we generally prefer the [NgClass directive](#ngClass) for managing multiple class names at the same time.
+
+:marked
+  ### Style Binding
+
+  We can set inline styles with a **style binding**.
+
+  Style binding syntax resembles property binding.
+  Instead of an element property between brackets, we start with the prefix `style`,
+  followed by a dot (`.`) and the name of a CSS style property: `[style.style-property]`.
+
++makeExample('template-syntax/ts/app/app.component.html', 'style-binding-1')(format=".")
+:marked
+  Some style binding styles have unit extension. Here we conditionally set the font size in  “em” and “%” units .
++makeExample('template-syntax/ts/app/app.component.html', 'style-binding-2')(format=".")
+
+.l-sub-section
+  :marked
+    This way works best when setting a single style,
+    but for several inline styles at the same time, we generally prefer the [NgStyle directive](#ngStyle).
+
+.l-sub-section
+  :marked
+    Note that a _style property_ name can be written in either
+    [dash-case](glossary.html#dash-case), as shown above, or
+    [camelCase](glossary.html#camelcase), such as `fontSize`.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .l-main-section
 :marked
   <a id="binding-syntax"></a>
